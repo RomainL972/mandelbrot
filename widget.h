@@ -2,6 +2,10 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <utility>
+#include <vector>
 
 class Widget : public QWidget
 {
@@ -9,13 +13,20 @@ class Widget : public QWidget
 
 public:
     Widget(QWidget *parent = nullptr);
+    std::pair<std::vector<QPoint>,std::vector<QColor>> paintWindow(int tailleMin, int tailleMax);
     void paintEvent(QPaintEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void resetZoom();
     ~Widget();
 
 private:
     int m_taille = 800;
-    float xmin, xmax, ymin, ymax, factor=1;
+    int iteration_max = 200;
+    double xmin, xmax, ymin, ymax, factor=1;
+    double a=-0.5, b=0.6;
     QPainter *m_painter;
+    QDialog *m_subwindow;
+    QVBoxLayout *m_sublayout;
+    QLabel *m_zoomFactor;
 };
 #endif // WIDGET_H
