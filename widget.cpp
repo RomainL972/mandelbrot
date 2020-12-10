@@ -16,7 +16,6 @@
 using namespace std;
 
 std::pair<vector<QPoint>,vector<QColor>> Widget::paintWindow(int tailleMin, int tailleMax) {
-    qDebug() << tailleMin << tailleMax;
     std::vector<QPoint> points;
     std::vector<QColor> colors;
     for(int line=tailleMin; line < tailleMax; line++) {
