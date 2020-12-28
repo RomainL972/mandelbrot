@@ -102,10 +102,10 @@ void Widget::paintEvent(QPaintEvent *event) {
 void Widget::resetZoom() {
     factor = 1;
     double x=0, y=0;
-    xmin = x - 1.25 * factor;
-    xmax = x + 1.25 * factor;
-    ymin = y - 1.25 * factor;
-    ymax = y + 1.25 * factor;
+    xmin = x - 2 * factor;
+    xmax = x + 1 * factor;
+    ymin = y - 1 * factor;
+    ymax = y + 1 * factor;
     update();
     m_zoomFactor->setText(tr("Zoom : X%n", "", 1/factor));
 }
@@ -117,12 +117,12 @@ void Widget::mousePressEvent(QMouseEvent *event) {
     else if(event->button() == Qt::RightButton) {
         factor *= 2;
     }
-//    double x = xmin + event->x() * (xmax-xmin) / m_taille;
-//    double y = ymax - event->y() * (ymax-ymin) / m_taille;
-//    xmin = x - 1.25 * factor;
-//    xmax = x + 1.25 * factor;
-//    ymin = y - 1.25 * factor;
-//    ymax = y + 1.25 * factor;
+    double x = xmin + event->x() * (xmax-xmin) / m_long;
+    double y = ymin + event->y() * (ymax-ymin) / m_larg;
+    xmin = x - 1.5 * factor;
+    xmax = x + 1.5 * factor;
+    ymin = y - 1 * factor;
+    ymax = y + 1 * factor;
     update();
     m_zoomFactor->setText(tr("Zoom : X%n", "", 1/factor));
 }
