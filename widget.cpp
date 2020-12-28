@@ -12,34 +12,74 @@
 #include <vector>
 #include <future>
 #include <utility>
+#include <complex>
+#include <iostream>
+#include <QApplication>
 
 using namespace std;
+
+//def create_point(x, y, result):
+//    # Conversion des coordonnée de pixel en nombre complexes
+//    c = complex(x1 + (x / Long) * (x2 - x1),
+//                y1 + (y / Larg) * (y2 - y1))
+//    # Calcule le nombre d'iterations
+//    def mandelbrot(c):
+//        z = 0
+//        n = 0
+//        while abs(z) <= 2 and n < maxiter:
+//            z = z*z + c
+//            n += 1
+
+//        if n == maxiter:
+//            return maxiter
+
+//        return n + 1 - log(log2(abs(z)))
+//    # colorer en fonction du nombre d'iterations
+//    teinte = int(255 * m / maxiter)
+//    satu = 255
+//    valeur = 255 if m < maxiter else 0
+//    # trace le points
+
+//    if not result.get(x):
+//        result[x] = {}
+//    result[x][y] = {"teinte": teinte, "satu": satu, "valeur": valeur}
 
 std::pair<vector<QPoint>,vector<QColor>> Widget::paintWindow(int tailleMin, int tailleMax) {
     std::vector<QPoint> points;
     std::vector<QColor> colors;
     for(int line=tailleMin; line < tailleMax; line++) {
-        for(int col = 0; col < m_taille; col++) {
+        for(int col = 0; col < m_long; col++) {
             QPoint point = QPoint(col,line);
             points.push_back(point);
-            int i = 1;
-            double x = xmin + col *  (xmax-xmin) / m_taille;
-            double y = ymax - line * (ymax-ymin) / m_taille;
 
-            while(i <= iteration_max && (x*x+y*y)<=4) {
-                double temp = x;
-                x = x*x - y*y + a;
-                y = 2*temp*y+b;
-                i += 1;
+            std::complex<double> c(xmin + ((double)col / m_long) * (xmax - xmin),
+                                   ymin + ((double)line / m_larg) * (ymax - ymin));
+
+            std::complex<double> z(0,0);
+            int n;
+            for (n = 0; std::abs(z) <= 2 && n < iteration_max; n++) {
+                z = z*z + c;
             }
-            if(x*x+y*y <= 4) {
-                colors.push_back(QColor(0,0,0));
-                //painter->setPen(QPen(QColor(0, 0, 0)));
+
+            double m;
+            if (n == iteration_max) {
+                m = iteration_max;
             }
             else {
-                colors.push_back(QColor((4*i)%256,(2*i)%256,(6*i)%256));
-                //painter->setPen(QPen(QColor((4*i)%256,(2*i)%256,(6*i)%256)));
+                m = n + 1 - std::log(std::log2(std::abs(z)));
             }
+
+            int teinte = (int)(255 * m / iteration_max);
+            int satu = 255;
+            int valeur;
+            if (m < iteration_max) {
+                valeur = 255;
+            }
+            else {
+                valeur = 0;
+            }
+
+            colors.push_back(QColor::fromHsv(teinte, satu, valeur));
         }
     }
     return std::pair<vector<QPoint>,vector<QColor>>(points, colors);
@@ -48,8 +88,8 @@ std::pair<vector<QPoint>,vector<QColor>> Widget::paintWindow(int tailleMin, int 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
 {
-    setFixedSize(m_taille, m_taille);
-    xmin = -1.25, xmax=1.25,ymin=-1.25,ymax=1.25;
+    setFixedSize(m_long, m_larg);
+    xmin = -2, xmax=1,ymin=-1,ymax=1;
     m_subwindow = new QDialog(this);
     m_subwindow->show();
     m_sublayout = new QVBoxLayout;
@@ -66,15 +106,15 @@ Widget::Widget(QWidget *parent)
 }
 
 void Widget::paintEvent(QPaintEvent *event) {
-    int threads = 8;
-    int part = m_taille / threads;
+    int threads = 200;
+    int part = m_larg / threads;
     m_painter = new QPainter(this);
     std::vector<std::future<std::pair<vector<QPoint>,vector<QColor>>>> threadsArray;
 
-    for (int i=0;i < 8;i++) {
+    for (int i=0;i < threads;i++) {
         threadsArray.push_back(std::async(&Widget::paintWindow,this,part*i, part*(i+1)));
     }
-    for (int i = 0; i < 8 ; i++) {
+    for (int i = 0; i < threads ; i++) {
         auto pair = threadsArray[i].get();
         for (auto j = 0; j < pair.first.size();j++) {
             m_painter->setPen(QPen(pair.second[j]));
@@ -82,6 +122,7 @@ void Widget::paintEvent(QPaintEvent *event) {
         }
     }
     delete m_painter;
+//    QApplication::quit();
 }
 
 void Widget::resetZoom() {
@@ -102,12 +143,12 @@ void Widget::mousePressEvent(QMouseEvent *event) {
     else if(event->button() == Qt::RightButton) {
         factor *= 2;
     }
-    double x = xmin + event->x() * (xmax-xmin) / m_taille;
-    double y = ymax - event->y() * (ymax-ymin) / m_taille;
-    xmin = x - 1.25 * factor;
-    xmax = x + 1.25 * factor;
-    ymin = y - 1.25 * factor;
-    ymax = y + 1.25 * factor;
+//    double x = xmin + event->x() * (xmax-xmin) / m_taille;
+//    double y = ymax - event->y() * (ymax-ymin) / m_taille;
+//    xmin = x - 1.25 * factor;
+//    xmax = x + 1.25 * factor;
+//    ymin = y - 1.25 * factor;
+//    ymax = y + 1.25 * factor;
     update();
     m_zoomFactor->setText(tr("Zoom : X%n", "", 1/factor));
 }

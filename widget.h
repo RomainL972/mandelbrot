@@ -20,7 +20,8 @@ public:
     ~Widget();
 
 private:
-    int m_taille = 800;
+    int m_long = 20000;
+    int m_larg = (double)m_long / 3.0 * 2;
     int iteration_max = 200;
     double xmin, xmax, ymin, ymax, factor=1;
     double a=-0.5, b=0.6;
