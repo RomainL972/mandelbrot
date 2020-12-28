@@ -18,32 +18,6 @@
 
 using namespace std;
 
-//def create_point(x, y, result):
-//    # Conversion des coordonnée de pixel en nombre complexes
-//    c = complex(x1 + (x / Long) * (x2 - x1),
-//                y1 + (y / Larg) * (y2 - y1))
-//    # Calcule le nombre d'iterations
-//    def mandelbrot(c):
-//        z = 0
-//        n = 0
-//        while abs(z) <= 2 and n < maxiter:
-//            z = z*z + c
-//            n += 1
-
-//        if n == maxiter:
-//            return maxiter
-
-//        return n + 1 - log(log2(abs(z)))
-//    # colorer en fonction du nombre d'iterations
-//    teinte = int(255 * m / maxiter)
-//    satu = 255
-//    valeur = 255 if m < maxiter else 0
-//    # trace le points
-
-//    if not result.get(x):
-//        result[x] = {}
-//    result[x][y] = {"teinte": teinte, "satu": satu, "valeur": valeur}
-
 std::pair<vector<QPoint>,vector<QColor>> Widget::paintWindow(int tailleMin, int tailleMax) {
     std::vector<QPoint> points;
     std::vector<QColor> colors;
@@ -106,7 +80,7 @@ Widget::Widget(QWidget *parent)
 }
 
 void Widget::paintEvent(QPaintEvent *event) {
-    int threads = 200;
+    int threads = 20;
     int part = m_larg / threads;
     m_painter = new QPainter(this);
     std::vector<std::future<std::pair<vector<QPoint>,vector<QColor>>>> threadsArray;
