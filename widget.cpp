@@ -13,8 +13,8 @@
 #include <future>
 #include <utility>
 #include <complex>
-#include <iostream>
 #include <QApplication>
+#include <QIntValidator>
 
 using namespace std;
 
@@ -71,16 +71,48 @@ Widget::Widget(QWidget *parent)
 
     m_zoomFactor = new QLabel("Zoom : X1");
     QPushButton *button = new QPushButton("Réinitialiser la vue");
+    QPushButton *settingsButton = new QPushButton("Paramètres");
 
     m_sublayout->addWidget(m_zoomFactor);
     m_sublayout->addWidget(button);
+    m_sublayout->addWidget(settingsButton);
+
+    QDialog *settingsDialog = new QDialog(this);
+    QVBoxLayout *settingsLayout = new QVBoxLayout;
+    settingsDialog->setLayout(settingsLayout);
+    QLabel *longueurLabel = new QLabel("Longueur de l'image");
+    m_longueurField = new QLineEdit(QString::number(m_long));
+    m_longueurField->setValidator(new QIntValidator(10, 999999));
+    QLabel *zoomFactorLabel = new QLabel("Facteur de zoom");
+    m_zoomFactorField = new QLineEdit(QString::number(zoomFactorChange));
+    m_zoomFactorField->setValidator(new QDoubleValidator(1, 999, 3));
+    QLabel *iterationMaxLabel = new QLabel("Nombre d'itérations");
+    m_iterationMaxField = new QLineEdit(QString::number(iteration_max));
+    m_iterationMaxField->setValidator(new QIntValidator(10, 999999));
+    QLabel *threadsLabel = new QLabel("Nombre de threads");
+    m_threadsField = new QLineEdit(QString::number(threads));
+    m_threadsField->setValidator(new QIntValidator(1, 999));
+    m_resetViewField = new QCheckBox("Réinitialiser l'image");
+    QPushButton *saveSettingsButton = new QPushButton("Enregistrer");
+
+    settingsLayout->addWidget(longueurLabel);
+    settingsLayout->addWidget(m_longueurField);
+    settingsLayout->addWidget(zoomFactorLabel);
+    settingsLayout->addWidget(m_zoomFactorField);
+    settingsLayout->addWidget(iterationMaxLabel);
+    settingsLayout->addWidget(m_iterationMaxField);
+    settingsLayout->addWidget(threadsLabel);
+    settingsLayout->addWidget(m_threadsField);
+    settingsLayout->addWidget(m_resetViewField);
+    settingsLayout->addWidget(saveSettingsButton);
 
     connect(button, &QPushButton::clicked, this, &Widget::resetZoom);
     connect(m_subwindow, &QDialog::finished, m_subwindow, &QDialog::show);
+    connect(settingsButton, &QPushButton::clicked, settingsDialog, &QDialog::show);
+    connect(saveSettingsButton, &QPushButton::clicked, this, &Widget::saveSettings);
 }
 
 void Widget::paintEvent(QPaintEvent *event) {
-    int threads = 20;
     int part = m_larg / threads;
     m_painter = new QPainter(this);
     std::vector<std::future<std::pair<vector<QPoint>,vector<QColor>>>> threadsArray;
@@ -88,7 +120,9 @@ void Widget::paintEvent(QPaintEvent *event) {
     for (int i=0;i < threads;i++) {
         threadsArray.push_back(std::async(&Widget::paintWindow,this,part*i, part*(i+1)));
     }
-    for (int i = 0; i < threads ; i++) {
+    threadsArray.push_back(std::async(&Widget::paintWindow, this, part*threads, m_larg));
+
+    for (size_t i = 0; i < threadsArray.size() ; i++) {
         auto pair = threadsArray[i].get();
         for (auto j = 0; j < pair.first.size();j++) {
             m_painter->setPen(QPen(pair.second[j]));
@@ -110,12 +144,29 @@ void Widget::resetZoom() {
     m_zoomFactor->setText(tr("Zoom : X%n", "", 1/factor));
 }
 
+void Widget::saveSettings() {
+    if (m_longueurField->hasAcceptableInput())
+        m_long = m_longueurField->text().toInt();
+    if (m_zoomFactorField->hasAcceptableInput())
+        zoomFactorChange = m_zoomFactorField->text().toInt();
+    if (m_iterationMaxField->hasAcceptableInput())
+        iteration_max = m_iterationMaxField->text().toInt();
+    if (m_threadsField->hasAcceptableInput())
+        threads = m_threadsField->text().toInt();
+    m_larg = (double)m_long / 3.0 * 2;
+    setFixedSize(m_long, m_larg);
+    if (m_resetViewField->isChecked())
+        resetZoom();
+    else
+        update();
+}
+
 void Widget::mousePressEvent(QMouseEvent *event) {
     if(event->button() == Qt::LeftButton) {
-        factor /= 2;
+        factor /= zoomFactorChange;
     }
     else if(event->button() == Qt::RightButton) {
-        factor *= 2;
+        factor *= zoomFactorChange;
     }
     double x = xmin + event->x() * (xmax-xmin) / m_long;
     double y = ymin + event->y() * (ymax-ymin) / m_larg;
